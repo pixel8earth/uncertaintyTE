@@ -25,7 +25,7 @@
 #endif
 #ifdef _WIN32
 	#define EXECUTABLE_FILE "uncertainty.exe"
-#elif __linux__ 
+#elif __linux__
 	#define EXECUTABLE_FILE "uncertainty"
 #endif
 
@@ -34,7 +34,7 @@
     #define LOAD_CMD_IO_FLAGS
     DEFINE_string(alg, "TAYLOR_EXPANSION",
             "algorithm for inversion of Schur complement matrix [SVD_QR_ITERATION, SVD_DEVIDE_AND_CONQUER, TAYLOR_EXPANSION]");
-    
+
     DEFINE_string(in, ".",
                     "path to input scene files (e.g. directory which contains cameras.txt, images.txt, points3D.tx for COLMAP;\n"
                     " or jacobian file <path_to_file>.jacob )");
@@ -47,7 +47,7 @@
 
     DEFINE_string(cam, "SIMPLE_RADIAL",
             "camera model ( SIMPLE_PINHOLE, PINHOLE, SIMPLE_RADIAL, RADIAL )");
-    
+
     DEFINE_bool(debug, false,
             "Print all the used matrices to txt files.\n");
 #endif
@@ -57,22 +57,22 @@
 
 /*
 Main function called from command line: unc.exe
-  In: 
+  In:
 	- algorithm: 0 = SVD_QR_ITERATION, 1 = SVD_DEVIDE_AND_CONQUER, 2 = TAYLOR_EXPANSION
     - jacobian/sfm_scene: path to the file without spaces
   Example Jacobain: unc.exe -in=input/myFile.jacob
   Example AliceVision:  unc.exe -in=input/myFile.[json,abc]
 */
 int main(int argc, char* argv[]) {
-    google::ParseCommandLineFlags(&argc, &argv, true);
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
     cov::Statistic statistic = cov::Statistic();
-    
+
     // read input data
     IO* io = FactoryIO::createIO(FLAGS_in_form);
     Scene scene = Scene();
-    if ( !io->read( FLAGS_in, scene ) ) 
+    if ( !io->read( FLAGS_in, scene ) )
         exit(1);
-        
+
     // compose Jacobian if not exist
     if( scene._jacobian.values.size() == 0 )
         JacobianComposer::scene2Jacobian( FLAGS_cam, FLAGS_alg, scene );
@@ -81,11 +81,11 @@ int main(int argc, char* argv[]) {
     scene._options._debug = FLAGS_debug;
 
     scene._uncertainty.init(scene._options);
-    
+
     // COMPUTE COVARIANCES
     computeCovariances(scene._options, statistic, scene._jacobian, &scene._uncertainty._camerasUnc[0], &scene._uncertainty._pointsUnc[0]);
 
-    // write results to the outut file 
+    // write results to the outut file
     io->writeCov2File(FLAGS_out, scene, statistic );
 
     std::cout << "Main function... [done]\n";
@@ -95,14 +95,14 @@ int main(int argc, char* argv[]) {
 
 
 /*
-Matlab interface, call in Matlab: unc( .... ) 
-*/  
+Matlab interface, call in Matlab: unc( .... )
+*/
 #ifdef USE_MATLAB
 void MEX_FUNCTION_NAME(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	cov::Statistic statistic = cov::Statistic();
 	cov::Options options = cov::Options();
 	ceres::CRSMatrix jacobian = ceres::CRSMatrix();
-	
+
 	// Load and create Jacobian using camera model [angle axis, camera center, focal length, radial distortion]
 	ceres::examples::BALProblem bal_problem = loadSceneMatlab( prhs );
 	buildJacobian(&bal_problem, jacobian, options);
