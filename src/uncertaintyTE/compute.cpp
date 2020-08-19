@@ -10,8 +10,8 @@
 
 #include "compute.h"
 #include "auxCmd.h"
-#include "ScaledSparseMatrix.h" 
-#include "ScaledDenseMatrix.h" 
+#include "ScaledSparseMatrix.h"
+#include "ScaledDenseMatrix.h"
 #include <Eigen/QR>
 #include <Eigen/SparseCore>
 
@@ -72,7 +72,7 @@ void iZupdate(SDM *iZ, double coeff, SDM *iZadd) {
 
 void composeZ(tp *s, cov::Options &options, cov::Statistic &statistic, SSM &J, double **diagRightScaleJ, SSM *Y, SDM *Z) {
 	if(options._debug) J.printBlock2Matlab3("Jbs", 0, 0, J.nrows(), J.ncols());
-	
+
 	// Scale Jacobian from left by a vector
 	double csJ = 1;
 	J.scaleMat(RIGHT, diagRightScaleJ, &csJ);
@@ -221,7 +221,7 @@ void svdInverse(magma_int_t *info, int N, cov::Options &options, SSM &J, SDM *iZ
 	// Combine all matrices back to the pseudo-inverse sdZ -> sdiM
 	if (options._svdRemoveN != -1) {
 		// U = U * diag(1/sv);   for values i < _svdRemoveN
-#pragma omp parallel for 
+#pragma omp parallel for
 		for (int i = 0; i < N; ++i) {
 			for (int j = 0; j < N; ++j)
 				U[i*N + j] *= (i < (N - options._svdRemoveN) ? 1 / sv[i] : 0);  // standard use: options._svdRemoveN = 7
@@ -232,7 +232,7 @@ void svdInverse(magma_int_t *info, int N, cov::Options &options, SSM &J, SDM *iZ
 		double eps = options._epsilon;
 		if (eps < 0)
 			eps = 1e-10;
-#pragma omp parallel for 
+#pragma omp parallel for
 		for (int i = 0; i < N; ++i) {
 			for (int j = 0; j < N; ++j)
 				U[i*N + j] *= (sv[i] > eps ? 1 / sv[i] : 0);
@@ -298,7 +298,7 @@ void fixPts(tp *s, int *pts, cov::Options &opt, cov::Statistic &statistic, SSM *
 			remCols[i * 3 + j] = camOffset + pts[i] * 3 + j;
 	}
 
-	// new ids 
+	// new ids
 	int *newIds = (int*)malloc(A->ncols * sizeof(int));
 	assert(newIds != NULL);
 	memset(newIds, 0, A->ncols * sizeof(int));
@@ -338,7 +338,7 @@ void fixPts(tp *s, int *pts, cov::Options &opt, cov::Statistic &statistic, SSM *
 	int error_ofset = 0;
 	for (int i = 1; i < rows.size(); i++) {
 		bool use = true;
-		if (rows[i] != (i * (opt._camParams + 3) - error_ofset) ) { // some camera without point corespondence 
+		if (rows[i] != (i * (opt._camParams + 3) - error_ofset) ) { // some camera without point corespondence
 			error_ofset += 3;
 			use = false;
 		}
@@ -370,7 +370,9 @@ void fixPts(tp *s, int *pts, cov::Options &opt, cov::Statistic &statistic, SSM *
 void findCams2Point(cov::Options &options, SSM* J, std::vector< std::vector<int> > &pts2cams_ids) {
 	int numPars = options._camParams + 3;
 	int cams_offset = options._numCams * options._camParams;
+	cout << "numPars: " << numPars << " cams_offset: " << cams_offset;
 	for (int i = 0; i < (J->nrows() / 2); i++) {
+		cout << "\n\n####\nPopulating Index: " << i << "\n\n####\n";
 		int ptId = (J->col(i * 2 * numPars + options._camParams) - cams_offset) / 3;
 		int camId = J->col(i * 2 * numPars) / options._camParams;
 		std::vector<int> tmp = pts2cams_ids[ptId];
@@ -391,10 +393,10 @@ void composeCams2PointJacobian(cov::Options &opt, int point_id, std::vector<int>
 	// Fill A,B
 	int t = 0;
 	for (int i = 0; i < (J->nrows() / 2); i++) {
-		
+
 		int k = i * 2 * numPars;
 		if (point_id == ((J->col(k+opt._camParams) - cams_offset) / 3)) {
-			
+
 			// cameras and observations
 			for (int j = 0; j < opt._camParams; j++) {
 				B(t * 2 + 0, t*(opt._camParams + 2) + j) = J->val(k + j);
@@ -430,7 +432,7 @@ void composeCamCovariances(cov::Options &opt, std::vector<int> &cams, SDM *iZ, c
 		int izOff = cams[i] * opt._camParams;
 
 		// Copy submatrix iZ to submatrix Sigma
-		for (int j = 0; j < opt._camParams; j++) {		// rows 
+		for (int j = 0; j < opt._camParams; j++) {		// rows
 			for (int k = 0; k < opt._camParams; k++) {	// columns
 				Sigma(sigOff + j, sigOff + k) = iZ->val(izOff + j, izOff + k) * scale[izOff + j] * scale[izOff + k];
 			}
@@ -445,7 +447,7 @@ void fillPtUnc2OutArray(int ptId, Eigen::MatrixXd &Sigma, cov::Options &opt, dou
 	for (int i = 0; i < 3; i++)
 		if (ptId >= opt._pts2fix[i]){ ptId++; }
 
-	int offset = ptId * 6;  // one point is represented by 6 vlaues 
+	int offset = ptId * 6;  // one point is represented by 6 vlaues
 	out[offset + 0] = Sigma(0, 0);
 	out[offset + 1] = Sigma(0, 1);
 	out[offset + 2] = Sigma(0, 2);
@@ -469,11 +471,11 @@ void computeCovariances(cov::Options &options, cov::Statistic &statistic, ceres:
 
     cout << "\n------ " << EAlgorithm_enumToString(options._algorithm) << " ------\n";
 	tp s = Clock::now(); tp s1 = s; cout << "Creating sJ ... ";
-       
-	// Create sparse matrix with separated scale coefficient 
-	SSM *J = new SSM(jacobian.num_rows, jacobian.num_cols, jacobian.rows.data(), jacobian.cols.data(), jacobian.values.data());        
+
+	// Create sparse matrix with separated scale coefficient
+	SSM *J = new SSM(jacobian.num_rows, jacobian.num_cols, jacobian.rows.data(), jacobian.cols.data(), jacobian.values.data());
 	if(options._debug) J->printBlock2Matlab3("J",0,0,J->nrows(),J->ncols());
-        
+
         // Main algorithm
 	int Ncams = options._numCams * options._camParams;
 	int Npar = Ncams + options._numPoints * 3;
@@ -501,7 +503,7 @@ void computeCovariances(cov::Options &options, cov::Statistic &statistic, ceres:
 
 		SSM *Y = new SSM();
 		iZ = new SDM(Ncams, Ncams);
-		composeZ(&s, options, statistic, *J, &diagRightScaleJ, Y, iZ);   // "iZ" contains Z	
+		composeZ(&s, options, statistic, *J, &diagRightScaleJ, Y, iZ);   // "iZ" contains Z
 		if(options._debug) iZ->printBlock2Matlab3("Z", 0, 0, iZ->nrows(), iZ->ncols());
 
 		teInverse(&s, Ncams, options, statistic, iZ);		// "iZ" is inversed to iZ
