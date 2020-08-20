@@ -370,7 +370,8 @@ void fixPts(tp *s, int *pts, cov::Options &opt, cov::Statistic &statistic, SSM *
 void findCams2Point(cov::Options &options, SSM* J, std::vector< std::vector<int> > &pts2cams_ids) {
 	int numPars = options._camParams + 3;
 	int cams_offset = options._numCams * options._camParams;
-	cout << "numPars: " << numPars << " cams_offset: " << cams_offset;
+	cout << "numPars: " << numPars << " cams_offset: " << cams_offset << "\n";
+	cout << "    Loop Limit: " << (J->nrows() / 2) << "\n";
 	for (int i = 0; i < (J->nrows() / 2); i++) {
 		// cout << i << " ";
 		int ptId = (J->col(i * 2 * numPars + options._camParams) - cams_offset) / 3;
@@ -516,7 +517,7 @@ void computeCovariances(cov::Options &options, cov::Statistic &statistic, ceres:
 	}
 
 	// Covariances for points - propagation of implicit function
-	std::vector< std::vector<int> > pts2cams_ids(options._numPoints-3, std::vector< std::vector<int> >());
+	std::vector< std::vector<int> > pts2cams_ids(options._numPoints-3, std::vector<int>());
 	findCams2Point(options, J, pts2cams_ids);
 #pragma omp parallel for
 	for (int i = 0; i < pts2cams_ids.size(); i++) {
