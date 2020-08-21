@@ -372,8 +372,7 @@ void findCams2Point(cov::Options &options, SSM* J, std::vector< std::vector<int>
 	int cams_offset = options._numCams * options._camParams;
 	cout << "numPars: " << numPars << " cams_offset: " << cams_offset << "\n";
 	cout << "    Loop Limit: " << (J->nrows() / 2) << "\n";
-	cout << "    Max ptId: " << (j->col( ((J->col(i * 2 * numPars + options._camParams) - cams_offset) / 3)
-	                                       * 2 * numPars + options._camParams) - cams_offset) / 3 << "\n";
+	cout << "    Max ptId: " << (j->col( (J->nrows() / 2) * 2 * numPars + options._camParams) - cams_offset) / 3;
 	for (int i = 0; i < (J->nrows() / 2); i++) {
 		// cout << i << " ";
 		int ptId = (J->col(i * 2 * numPars + options._camParams) - cams_offset) / 3;
