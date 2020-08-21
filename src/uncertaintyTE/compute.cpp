@@ -368,11 +368,12 @@ void fixPts(tp *s, int *pts, cov::Options &opt, cov::Statistic &statistic, SSM *
 }
 
 void findCams2Point(cov::Options &options, SSM* J, std::vector< std::vector<int> > &pts2cams_ids) {
-	int numPars = options._camParams + 3;
-	int cams_offset = options._numCams * options._camParams;
+	// NOTE: pts2cams is initialized with options._numPoints - 3 elements
+	int numPars = options._camParams + 3; // takes upper triangle parameters and adds 3 to get a full 3x3 Matrix?
+	int cams_offset = options._numCams * options._camParams; // 6 * numCams (287 cams for test) = 1722
 	cout << "numPars: " << numPars << " cams_offset: " << cams_offset << "\n";
 	cout << "    Loop Limit: " << (J->nrows() / 2) << "\n";
-	cout << "    Max ptId: " << (J->col( (J->nrows() / 2) * 2 * numPars + options._camParams) - cams_offset) / 3;
+	cout << "    Max ptId: " << (J->col( ((J->nrows() / 2) - 1) * 2 * numPars + options._camParams) - cams_offset) / 3 << "\n";
 	for (int i = 0; i < (J->nrows() / 2); i++) {
 		// cout << i << " ";
 		int ptId = (J->col(i * 2 * numPars + options._camParams) - cams_offset) / 3;
